@@ -32,7 +32,7 @@ def parse_args(argv):
 
     parser.add_argument('--file', help='Path to rfmix .fb.tsv file')
     parser.add_argument('--out', help='Prefix of the output files')
-    parser.add_argument('--popidx', help='Index of the ancestry to output, 1-based', type=int)
+    parser.add_argument('--pop', help='the ancestry to output, match to the header of rfmix output', type=str)
 
 
     return parser.parse_args(argv)
@@ -44,7 +44,6 @@ def main(argv):
 
     fbtsv = args.file
     outprefix = args.out
-    idx = args.popidx
 
 
     # Count M
@@ -56,6 +55,9 @@ def main(argv):
     f = open(fbtsv, 'r')
     comment = f.readline();
     pops = comment.strip().split('\t')[1:]
+    pops_idx_lookup = {p:(i+1) for i,p in enumerate(pops) }
+    idx = pops_idx_lookup[args.pop]
+
     n_pops = len(pops)
 
     # Count N
@@ -92,6 +94,8 @@ def main(argv):
             pos.append(int(line_split[1]))
 
     pos = np.array(pos)
+
+    f.close()
 
     logging.info('Finish writing pgen file')
 
