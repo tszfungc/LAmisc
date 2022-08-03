@@ -87,7 +87,7 @@ def main(argv):
         for i, line in enumerate(f):
             line_split = line.strip().split('\t')
             pgwrite.append_dosages(
-                np.float_(line_split[(3+idx)::4]) + np.float_(line_split[(5+idx)::4])
+                np.float_(line_split[(3+idx)::(2*n_pops)]) + np.float_(line_split[(3+n_pops+idx)::(2*n_pops)])
             )
             if chrom is None:
                 chrom = int(line_split[0])
