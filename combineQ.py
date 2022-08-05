@@ -7,7 +7,7 @@ import argparse
 def parse_args(argv):
 
     parser = argparse.ArgumentParser(
-        description='Convert rfmix .fb.tsv output to plink2 pgen format'
+        description='Combine .rfmix.Q global ancestry from all chromosomes'
     )
 
     parser.add_argument('--file', help='Text file, list of global ancestry output .rfmix.Q')
