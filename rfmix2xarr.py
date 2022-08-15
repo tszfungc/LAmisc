@@ -62,8 +62,8 @@ def main(argv):
 
     # Count N
     header = f.readline()
-    indv = np.unique(
-        list(map(lambda x: x.split(':::')[0], header.strip().split('\t')[4:]))
+    indv = np.array(
+        list(map(lambda x: x.split(':::')[0], header.strip().split('\t')[4:]))[::(2*n_pops)]
     )
     N = indv.shape[0]
 
