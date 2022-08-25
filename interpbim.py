@@ -39,7 +39,7 @@ def interpolate_bim(bim: pd.DataFrame, cm_map: pd.DataFrame) -> pd.DataFrame:
     """
 
     chrom = bim.iloc[0, 0]
-    cm_map = cm_map[cm_map.iloc[0] == chrom]
+    cm_map = cm_map[cm_map.iloc[:, 0] == chrom]
     interp_cM = np.interp(bim[3].values, cm_map.iloc[:, 1], cm_map.iloc[:, 2])
 
     bim_out = bim.copy()
