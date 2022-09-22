@@ -1,30 +1,9 @@
-"""
-Python script to convert rfmix output to plink2 pgen format
-
-The .fb.tsv file is read and dosages are written in plink2 pgen format.
-
-Three files will be output
-
-.pgen .pvar and .psam
-
-In .pgen, the ancestry probability of the two haplotypes are summed.
-The resulted dosages are written to .pgen.
-
-
-In .pvar, variant IDs are default to be chromosome:coordinate
-
-.psam default sex is missing.
-
-"""  # noqa: E501
-
-
 import argparse
 import logging
 import sys
 
 import numpy as np
-import pandas as pd
-import pgenlib as pg
+import xarray as xr
 
 logging.basicConfig(level=logging.INFO)
 
@@ -92,36 +71,39 @@ def main(argv):
     # pgen
     chrom = None
     pos = []
-    with pg.PgenWriter(
-        f"{outprefix}.pgen".encode("utf-8"), N, M, False, dosage_present=True
-    ) as pgwrite:
-        for i, line in enumerate(f):
-            line_split = line.strip().split("\t")
-            pgwrite.append_dosages(
-                np.float_(line_split[(3 + idx) :: (2 * n_pops)])
-                + np.float_(line_split[(3 + n_pops + idx) :: (2 * n_pops)])
-            )
-            if chrom is None:
-                chrom = int(line_split[0])
-            pos.append(int(line_split[1]))
 
-    pos = np.array(pos)
+    # M = 100
+    genotype_matrix = np.nan * np.empty((M, N))
+    for i, line in enumerate(f):
+        if i % 100 == 0:
+            logging.info(f"processing {i}-th marker")
+        #    if i == 100:
+        #        break
+        line_split = line.strip().split("\t")
+        genotype_matrix[i] = np.float_(
+            line_split[(3 + idx) :: (2 * n_pops)]
+        ) + np.float_(line_split[(3 + n_pops + idx) :: (2 * n_pops)])
+        if chrom is None:
+            chrom = int(line_split[0])
+        pos.append(int(line_split[1]))
 
-    f.close()
+    vp = np.array(pos)
+    vi = [f"{chrom}:{p}" for p in pos]
+    si = indv
 
-    logging.info("Finish writing pgen file")
+    xarr = xr.DataArray(
+        genotype_matrix,
+        dims=["variants", "samples"],
+        coords={
+            "pos": ("variants", vp),
+            "variant_id": ("variants", vi),
+            "sample_id": ("samples", si),
+        },
+    )
 
-    # psam
-    psam_df = pd.DataFrame({"#IID": indv}).assign(SEX="NA")
-    psam_df.to_csv(f"{outprefix}.psam", index=False, sep="\t")
-    logging.info("Finish writing psam file")
+    print(xarr)
 
-    # pvar
-    pvar_df = pd.DataFrame(
-        {"#CHROM": np.repeat(chrom, M), "POS": pos, "ID": [f"{chrom}:{p}" for p in pos]}
-    ).assign(REF="T", ALT="A")
-    pvar_df.to_csv(f"{outprefix}.pvar", index=False, sep="\t")
-    logging.info("Finish writing pvar file")
+    xarr.to_netcdf(f"{outprefix}.nc")
 
     logging.info(
         """
